@@ -115,4 +115,171 @@
 	UUID=874b555a-0af3-4344-a233-e429b13c666c /var/www/html ext4 defaults 0 0
 	UUID=5d84b27a-9e74-4927-92cd-b8664962b697 /var/log      ext4 defaults 0 0
 
- 
+<p>Test the configuration and reload the daemon:</p>
+
+- [x] sudo mount -a
+- [x] sudo systemctl daemon-reload
+
+<p>Verify your setup by running df -h, output must look like this:</p>
+
+![1x](https://user-images.githubusercontent.com/10243139/124367761-fffa7d80-dc51-11eb-9078-a749d796d23a.jpg)
+
+<h2>Step 2 — Prepare the Database Server</h2>
+
+<p>Launch a second RedHat EC2 instance that will have a role - ‘DB Server’ Repeat the same steps as for the Web Server</p>
+
+<p>Create and Attach three volumes one by one to your Database Server EC2 instance</p>
+
+<p>Use gdisk utility to create a single partition on each of the 3 disks:</p>
+
+- [x] sudo gdisk /dev/xvdf
+
+- [x] sudo gdisk /dev/xvdg
+	
+- [x] sudo gdisk /dev/xvdh
+
+<p>Install lvm2 package by running the command:
+
+- [x] sudo yum install lvm2 -y
+	
+<p>Use pvcreate utility to mark each of 3 disks as physical volumes (PVs) to be used by LVM:</p>
+
+- [x] sudo pvcreate /dev/xvdf1 /dev/xvdg1 /dev/xvdh1
+
+<p>Use vgcreate utility to add all 3 PVs to a volume group (VG). Name the VG webdata-vg:</p>
+
+- [x] sudo vgcreate webdata-vg /dev/xvdh1 /dev/xvdg1 /dev/xvdf1
+
+<p>Use lvcreate utility to create 2 logical volumes:</p>
+
+- [x] sudo lvcreate -n db-lv -L 14G database-vg
+	
+- [x] sudo lvcreate -n logs-lv -L 14G database-vg
+
+<p>Verify that your Logical Volume has been created successfully by running:</p>
+
+- [x] sudo lvs
+
+<p>Use mkfs.ext4 to format the logical volumes with ext4 filesystem:</p>
+
+- [x] sudo mkfs -t ext4 /dev/database-vg/db-lv
+
+<p>Create /db directory to store database files:</p>
+
+- [x] sudo mkdir /db
+
+<p>Mount /db on db-lv logical volume:</p>
+
+- [x] sudo mount /dev/database-vg/db-lv /db
+
+<p>Confirm that it has been mounted by running this command:</p>
+
+- [x] df -h
+
+![2l](https://user-images.githubusercontent.com/10243139/124367905-777cdc80-dc53-11eb-837b-26d9a1ed747c.jpg)
+
+<p>Update /etc/fstab file so that the mount configuration will persist after restart of the server, you can get the UUID of the device by running sudo blkid. Update the file with:</p>
+
+	UUID=ae2f91ec-5e4a-4b49-9d82-3d61e0d7bb22 /db ext4 defaults 0 0
+	
+<p>Test the configuration and reload the daemon:</p>
+
+- [x] sudo mount -a
+
+- [x] sudo systemctl daemon-reload
+
+<h2>Step 3 — Install Wordpress on your Web Server EC2</h2>
+
+<p>Update the repository
+
+- [x] sudo yum update -y
+	
+<p>Install wget, Apache and it’s dependencies
+	
+- [x] sudo yum -y install wget httpd php php-mysqlnd php-fpm php-json
+	
+<p>Start Apache:
+	
+- [x] sudo systemctl enable httpd
+
+- [x] sudo systemctl start httpd
+	
+<p>To install PHP and it’s depemdencies:</p>
+
+- [x] sudo yum install https://dl.fedoraproject.org/pub/epel/epel-	release-latest-8.noarch.rpm
+	
+- [x] sudo yum install yum-utils 	http://rpms.remirepo.net/enterprise/remi-release-8.rpm
+	
+- [x] sudo yum module list php
+	
+- [x] sudo yum module reset php
+	
+- [x] sudo yum module enable php:remi-7.4
+	
+- [x] sudo yum install php php-opcache php-gd php-curl php-mysqlnd
+	
+- [x] sudo systemctl start php-fpm
+	
+- [x] sudo systemctl enable php-fpm
+	
+- [x] sudo setsebool -P httpd_execmem 1
+
+<p>Restart Apache</p>
+
+- [x] sudo systemctl restart httpd
+
+<p>Download wordpress and copy wordpress to var/www/html<p>
+	
+- [x] mkdir wordpress
+	
+- [x] cd   wordpress
+	
+- [x] sudo wget http://wordpress.org/latest.tar.gz
+	
+- [x] sudo tar xzvf latest.tar.gz
+	
+- [x] sudo rm -rf latest.tar.gz
+	
+- [x] sudo cp wordpress/wp-config-sample.php wordpress/wp-config.php
+	
+- [x] sudo cp -R wordpress/. /var/www/html/
+	
+<p>Configure SELinux Policies<p>
+	
+- [x] sudo chown -R apache:apache /var/www/html/wordpress
+
+- [x] sudo chcon -t httpd_sys_rw_content_t /var/www/html/wordpress -R
+
+- [x] sudo setsebool -P httpd_can_network_connect=1
+	
+![3g](https://user-images.githubusercontent.com/10243139/124368193-8dd86780-dc56-11eb-8581-0d32ba3afee1.jpg)
+
+<h2>Step 4 — Install MySQL on your DB Server EC2</h2>
+
+<p>Update and install mysql server on the DB Server EC2:</p>
+
+- [x] sudo yum update
+
+- [x] sudo yum install mysql-server
+
+<p>Verify that the service is up and running by using:</p>
+
+- [x] sudo systemctl restart mysqld
+	
+- [x] sudo systemctl enable mysqld
+
+
+<h2>Step 5 — Configure DB to work with WordPress</h2>
+
+- [x] sudo mysql
+
+- [x] CREATE DATABASE wordpress;
+
+- [x] CREATE USER `myuser`@`<Web-Server-Private-IP-Address>` IDENTIFIED BY 'mypass';
+
+- [x] GRANT ALL ON wordpress.* TO 'myuser'@'<Web-Server-Private-IP-Address>';
+	
+FLUSH PRIVILEGES;
+SHOW DATABASES;
+exit
+
