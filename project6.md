@@ -273,13 +273,60 @@
 
 - [x] sudo mysql
 
-- [x] CREATE DATABASE wordpress;
+		CREATE DATABASE wordpress;
+		CREATE USER `myuser`@`<Web-Server-Private-IP-Address>` IDENTIFIED BY 'mypass';
+		GRANT ALL ON wordpress.* TO 'myuser'@'<Web-Server-Private-IP-Address>';
+		FLUSH PRIVILEGES;
+		SHOW DATABASES;
+		exit
+		
+![5](https://user-images.githubusercontent.com/10243139/124373204-23d8b600-dc88-11eb-8a22-d26a51eb21ae.jpg)
 
-- [x] CREATE USER `myuser`@`<Web-Server-Private-IP-Address>` IDENTIFIED BY 'mypass';
 
-- [x] GRANT ALL ON wordpress.* TO 'myuser'@'<Web-Server-Private-IP-Address>';
+<h2>Step 6 — Configure WordPress to connect to remote database</h2>
+
+<p>Open MySQL port 3306 on DB Server EC2. For extra security, you shall allow access to the DB server ONLY from your Web Server’s IP address</p>
+
+![6a](https://user-images.githubusercontent.com/10243139/124373238-77e39a80-dc88-11eb-9ef1-79576b056264.png)
+
+<p>Install MySQL client and test that you can connect from your Web Server to your DB server:</p>
+
+- [x] sudo yum install mysql -y
+- [x] sudo mysql -u myuser -p -h <DB-Server-Private-IP-address>
 	
-FLUSH PRIVILEGES;
-SHOW DATABASES;
-exit
+<p>Verify if you can successfully execute SHOW DATABASES command and see a list of existing databases</p>
+
+![6c](https://user-images.githubusercontent.com/10243139/124373271-c85af800-dc88-11eb-91fc-97d25f538b63.jpg)
+
+<p>Update /etc/my.cnf, add the following to the file:</p>
+		
+	[mysqld]
+	bind-address=0.0.0.0
+	
+![6d](https://user-images.githubusercontent.com/10243139/124373304-2c7dbc00-dc89-11eb-8f6c-3de98dba467a.jpg)
+	
+<p>Restart mysql:</p>
+	
+- [x] sudo systemctl restart mysqld
+	
+<p>Change permissions and configuration on the webserver so Apache could use WordPress, update the Database name, username and password:</p>
+	
+- [x] sudo nano /var/www/html/wp-config.php
+
+![6f](https://user-images.githubusercontent.com/10243139/124373344-83839100-dc89-11eb-8fbf-545efdc010cf.jpg)
+
+<p>Try to access WordPress by going through the Public IP Address of your Webserver:</p>
+	
+![6g](https://user-images.githubusercontent.com/10243139/124373364-b594f300-dc89-11eb-9c44-1b138b3677df.jpg)
+	
+<p>The Wordpress Page after setup</p>
+	
+![6g 1](https://user-images.githubusercontent.com/10243139/124373381-d0fffe00-dc89-11eb-9d5d-1e7a0c30ccec.jpg)
+	
+<p>The Wordpress Admin Page</p>
+	
+![6g 2](https://user-images.githubusercontent.com/10243139/124373397-eb39dc00-dc89-11eb-94b4-407803729c18.jpg)
+
+<h3>We have learned how to configure Linux storage susbystem and have also deployed a full-scale Web Solution using WordPress CMS and MySQL RDBMS!</h3>
+
 
